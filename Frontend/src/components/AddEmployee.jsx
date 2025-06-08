@@ -48,7 +48,7 @@ function AddEmployee() {
     formData.append('image', employee.image);
     formData.append('category_id', employee.category_id);
 
-    axios.post('http://localhost:3000/auth/add_employee', formData)
+    axios.post(`http://localhost/${apiUrl}/auth/add_employee`, formData)
       .then(result => {
         console.log(result.data);
         if (result.data.success) {

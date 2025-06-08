@@ -11,7 +11,7 @@ import mongoSanitize from "express-mongo-sanitize";
 import { body, validationResult } from "express-validator";
 import User from "../models/User.js";
 import Category from "../models/Category.js";
-import authController from "../controllers/authController.js";
+import Admin from "../models/Admin.js";
 
 dotenv.config();
 const router = express.Router();
@@ -83,6 +83,8 @@ const authorize = (roles = []) => {
 };
 
 // ==================== AUTH ROUTES ====================
+
+// Admin Signup Route - FIXED (remove manual password hashing)
 router.post("/adminsignup", [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
@@ -99,11 +101,11 @@ router.post("/adminsignup", [
       return res.status(409).json({ success: false, error: "User already exists" });
     }
  
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // DON'T hash password here - let the User model pre-save middleware handle it
     const newUser = await User.create({ 
       name, 
       email, 
-      password: hashedPassword, 
+      password: password.trim(), // Just trim, don't hash
       role 
     });
 
@@ -113,13 +115,13 @@ router.post("/adminsignup", [
       { expiresIn: "1d" }
     );
 
-res.cookie("jwt", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 24 * 60 * 60 * 1000, // 1 day
-  domain: process.env.NODE_ENV === "development" ? undefined : process.env.COOKIE_DOMAIN
-});
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      domain: process.env.NODE_ENV === "development" ? undefined : process.env.COOKIE_DOMAIN
+    });
 
     return res.status(201).json({ 
       success: true, 
@@ -136,34 +138,48 @@ res.cookie("jwt", token, {
   }
 });
 
-router.post("/auth/adminlogin", authLimiter, [
+// Admin Login Route - SIMPLIFIED
+router.post("/adminlogin", authLimiter, [
   body('email').isEmail().normalizeEmail(),
   body('password').notEmpty()
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ success: false, errors: errors.array() });
+  if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
+    return res.status(400).json({ success: false, errors: errors.array() });
+  }
 
   try {
     const { email, password } = req.body;
-    console.log(`Login attempt for: ${email}`);
+    console.log('=== LOGIN ATTEMPT ===');
+    console.log(`Email: ${email}`);
     
-    const user = await User.findOne({ email, role: 'admin' });
-    if (!user) {
-      console.log('No admin user found with this email');
+    // Find admin user
+    const admin = await User.findOne({ 
+      email, 
+      role: ROLES.ADMIN
+    });
+    
+    if (!admin) {
+      console.log('Admin not found');
       return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
-    console.log('Comparing passwords...');
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match result:', isMatch);
+    console.log('Admin found, checking password...');
+    
+    // Use the comparePassword method from the User model
+    const isMatch = await admin.comparePassword(password.trim());
+    console.log('Password match:', isMatch);
     
     if (!isMatch) {
-      console.log('Password does not match');
+      console.log('Password mismatch');
       return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
+    console.log('Login successful');
+    
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: admin._id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -173,16 +189,16 @@ router.post("/auth/adminlogin", authLimiter, [
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 86400000,
-      domain: process.env.NODE_ENV === 'development' ? 'localhost' : undefined
+      domain: process.env.NODE_ENV === 'development' ? undefined : process.env.COOKIE_DOMAIN
     });
 
     return res.json({ 
       success: true, 
       data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
+        id: admin._id,
+        email: admin.email,
+        role: admin.role,
+        name: admin.name || admin.email
       }
     });
   } catch (err) {
@@ -190,6 +206,35 @@ router.post("/auth/adminlogin", authLimiter, [
     return res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
+
+// Debug route
+router.get("/debug/check-user/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    
+    const users = await User.find({ email });
+    const adminUsers = await User.find({ email, role: 'admin' });
+    
+    res.json({
+      email,
+      totalUsers: users.length,
+      users: users.map(u => ({
+        id: u._id,
+        email: u.email,
+        role: u.role,
+        name: u.name,
+        hasPassword: !!u.password
+      })),
+      adminUsersString: adminUsers.length,
+      adminUsersConstant: adminUsers.length,
+      rolesConstant: ROLES.ADMIN
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== PROTECTED ROUTES ====================
 router.use(authenticate);
 
@@ -237,10 +282,11 @@ router.post("/employees", authorize([ROLES.ADMIN]), upload.single("image"), [
   try {
     const { name, email, password, address, salary, category_id } = req.body;
     
+    // Don't hash here - let User model handle it
     const employee = await User.create({
       name,
       email,
-      password: await bcrypt.hash(password, 12),
+      password: password.trim(),
       address,
       salary,
       image: req.file?.filename,
@@ -277,9 +323,10 @@ router.post("/admins", authorize([ROLES.ADMIN]), [
   try {
     const { email, password } = req.body;
     
+    // Don't hash here - let User model handle it
     const admin = await User.create({
       email,
-      password: await bcrypt.hash(password, 12),
+      password: password.trim(),
       role: ROLES.ADMIN
     });
 
@@ -332,10 +379,5 @@ router.use((err, req, res, next) => {
   
   res.status(500).json({ success: false, error: "Internal server error" });
 });
-
-// router.post("/adminlogin", authController.login);
-// router.post("/adminsignup", authController.signup);
-// router.get("/verify", authController.verify);
-// router.post("/logout", authController.logout);
 
 export { router as adminRouter };

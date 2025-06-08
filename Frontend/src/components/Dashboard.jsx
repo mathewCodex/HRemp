@@ -261,21 +261,39 @@ import Sidebar from "./Sidebar";
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const apiUrl = import.meta.env.VITE_API_URL;
-  axios.defaults.withCredentials = true;
-
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePath, setActivePath] = useState("");
   const [auth, setAuth] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Check authentication on mount
   useEffect(() => {
-    const authData = JSON.parse(localStorage.getItem('auth'));
-    if (!authData?.isAuthenticated) {
-      navigate('/login');
-    } else {
-      setAuth(authData);
-    }
+    const checkAuth = () => {
+      try {
+        const authData = localStorage.getItem('auth');
+        if (!authData) {
+          navigate('/adminlogin');
+          return;
+        }
+
+        const parsedAuth = JSON.parse(authData);
+        if (!parsedAuth?.isAuthenticated) {
+          navigate('/adminlogin');
+          return;
+        }
+
+        setAuth(parsedAuth);
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        localStorage.removeItem('auth');
+        navigate('/adminlogin');
+      }
+    };
+
+    checkAuth();
   }, [navigate]);
 
   // Update active path when location changes
@@ -285,15 +303,15 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      const result = await axios.get(`${apiUrl}/auth/logout`);
-      if (result.data.success) {
-        localStorage.removeItem('auth');
-        toast.success("Logged out successfully");
-        navigate('/login');
-      }
+      await axios.get(`${apiUrl}/auth/logout`);
+      localStorage.removeItem('auth');
+      toast.success("Logged out successfully");
+      navigate('/adminlogin');
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
       console.error("Logout error:", error);
+      // Even if server logout fails, clear local storage and redirect
+      localStorage.removeItem('auth');
+      navigate('/adminlogin');
     }
   };
 
@@ -315,8 +333,18 @@ const Dashboard = () => {
     delay: 200,
   });
 
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{height: '100vh'}}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!auth) {
-    return null; // or loading spinner
+    return null;
   }
 
   return (

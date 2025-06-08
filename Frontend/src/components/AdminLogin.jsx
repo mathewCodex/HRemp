@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+import Admin from "../../../Server/models/Admin"
 
 function AdminLogin() {
-    // Use environment variable for API URL with fallback
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     
-    // State management
     const [values, setValues] = useState({
         email: '',
         password: ''
@@ -22,6 +20,14 @@ function AdminLogin() {
     useEffect(() => {
         axios.defaults.withCredentials = true;
     }, []);
+
+    // Check if already authenticated
+    useEffect(() => {
+        const authData = JSON.parse(localStorage.getItem('auth'));
+        if (authData?.isAuthenticated) {
+            navigate('/dashboard');
+        }
+    }, [navigate]);
 
     // Form validation
     const validateForm = () => {
@@ -44,50 +50,70 @@ function AdminLogin() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setValues({ ...values, [name]: value });
-        // Clear error when typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
 
     // Form submission handler
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!validateForm()) return;
 
-  setLoading(true);
+        setLoading(true);
 
-  try {
-    const response = await axios.post(
-      `${apiUrl}/auth/adminlogin`,
-      {
-        email: values.email.trim(),
-        password: values.password.trim()
-      },
-      {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
+        try {
+            const response = await axios.post(
+                `${apiUrl}/auth/adminlogin`,
+                {
+                    email: values.email.trim(),
+                    password: values.password.trim()
+                },
+                {
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            console.log('Login response:', response.data); // Debug log
+
+            if (response.data.success) {
+                // Store auth data with consistent structure
+                const authData = {
+                    isAuthenticated: true,
+                    user: response.data.data || response.data.user,
+                    role: response.data.data?.role || response.data.user?.role || 'admin'
+                };
+
+                localStorage.setItem('auth', JSON.stringify(authData));
+                
+                toast.success('Login successful!');
+                
+                // Use navigate instead of window.location.href
+                navigate('/dashboard', { replace: true });
+            } else {
+                toast.error(response.data.message || 'Login failed');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            
+            if (error.response?.status === 401) {
+                toast.error('Invalid email or password');
+            } else if (error.response?.status === 500) {
+                toast.error('Server error. Please try again later.');
+            } else if (!error.response) {
+                toast.error('Network error. Please check your connection.');
+            } else {
+                toast.error(error.response?.data?.message || 'Login failed');
+            }
+        } finally {
+            setLoading(false);
         }
-      }
-    );
+    };
+    
 
-    if (response.data.success) {
-      // Store minimal auth data
-      localStorage.setItem('auth', JSON.stringify({
-        isAuthenticated: true,
-        user: response.data.data // Changed from response.data.user
-      }));
-      
-      // Redirect to dashboard
-      window.location.href = '/dashboard'; // Full page reload to ensure auth state
-    }
-  } catch (error) {
-    // Error handling
-  } finally {
-    setLoading(false);
-  }
-};
     return (
         <div id='form-body' style={{
             background: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 50%, #d4b6f4 100%)',
@@ -97,20 +123,6 @@ const handleSubmit = async (e) => {
             justifyContent: 'center',
             alignItems: 'center'
         }}>
-            {/* Toast notifications container */}
-            <ToastContainer 
-                position="bottom-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop={false}
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-            />
-            
-            {/* Login form container */}
             <div className="login-container" style={{
                 background: 'rgba(255, 255, 255, 0.95)',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -122,7 +134,6 @@ const handleSubmit = async (e) => {
                 maxWidth: '450px',
                 transition: 'all 0.3s ease'
             }}>
-                {/* Header section */}
                 <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                     <h2 style={{
                         color: '#5e72e4',
@@ -137,9 +148,7 @@ const handleSubmit = async (e) => {
                     </p>
                 </div>
 
-                {/* Login form */}
                 <form onSubmit={handleSubmit}>
-                    {/* Email input */}
                     <div className="mb-4">
                         <label htmlFor='email' className="form-label" style={{
                             color: '#5e72e4',
@@ -177,7 +186,6 @@ const handleSubmit = async (e) => {
                         )}
                     </div>
 
-                    {/* Password input */}
                     <div className="mb-4">
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <label htmlFor='password' className="form-label" style={{
@@ -232,24 +240,19 @@ const handleSubmit = async (e) => {
                         )}
                     </div>
 
-                    {/* Forgot password link */}
                     <div style={{ marginBottom: '20px', textAlign: 'right' }}>
                         <Link 
                             to="/forgot-password" 
                             style={{
                                 color: '#6c757d',
                                 fontSize: '0.9rem',
-                                textDecoration: 'none',
-                                '&:hover': {
-                                    textDecoration: 'underline'
-                                }
+                                textDecoration: 'none'
                             }}
                         >
                             Forgot password?
                         </Link>
                     </div>
 
-                    {/* Submit button */}
                     <button 
                         type="submit" 
                         disabled={loading}
@@ -273,14 +276,9 @@ const handleSubmit = async (e) => {
                             gap: '10px'
                         }}
                     >
-                        {loading ? (
-                            <>
-                                <span>Logging in...</span>
-                            </>
-                        ) : 'Log in'}
+                        {loading ? 'Logging in...' : 'Log in'}
                     </button>
 
-                    {/* Sign up link */}
                     <div style={{
                         textAlign: 'center',
                         color: '#6c757d',
@@ -292,10 +290,7 @@ const handleSubmit = async (e) => {
                             style={{
                                 color: '#764ba2',
                                 fontWeight: '600',
-                                textDecoration: 'none',
-                                '&:hover': {
-                                    textDecoration: 'underline'
-                                }
+                                textDecoration: 'none'
                             }}
                         >
                             Sign Up
@@ -308,4 +303,3 @@ const handleSubmit = async (e) => {
 }
 
 export default AdminLogin;
-
