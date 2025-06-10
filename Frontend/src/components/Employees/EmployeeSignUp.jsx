@@ -5,55 +5,87 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function EmployeeSignup() {
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
     const [values, setValues] = useState({
         name: '',
         email: '',
         password: '',
         confirmPassword: '',
-        position: '', // Optional: Add role/position field
+        position: ''
     });
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
     const navigate = useNavigate();
     axios.defaults.withCredentials = true;
+
+    const validateForm = () => {
+        const newErrors = {};
+        
+        if (!values.name.trim()) newErrors.name = 'Name is required';
+        if (!values.email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+            newErrors.email = 'Please enter a valid email';
+        }
+        if (!values.password) {
+            newErrors.password = 'Password is required';
+        } else if (values.password.length < 8) {
+            newErrors.password = 'Password must be at least 8 characters';
+        }
+        if (values.password !== values.confirmPassword) {
+            newErrors.confirmPassword = 'Passwords do not match';
+        }
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setValues({ ...values, [name]: value });
+        // Clear error when user types
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
 
-        // Validation
-        if (!values.name || !values.email || !values.password || !values.confirmPassword) {
-            toast.error("All fields are required.");
-            setLoading(false);
-            return;
-        }
-
-        if (values.password !== values.confirmPassword) {
-            toast.error("Passwords do not match.");
-            setLoading(false);
-            return;
-        }
-
         try {
-            const result = await axios.post(`${apiUrl}/employee/employeesignup`, values);
-            if (result.data.signupStatus) {
-                toast.success("Account created! Redirecting to login...");
-                setTimeout(() => navigate('/employeelogin'), 1500);
+            const { data } = await axios.post(`${apiUrl}/employee/employeesignup`, {
+                name: values.name,
+                email: values.email,
+                password: values.password,
+                position: values.position,
+                role: 'employee'
+            }, {
+                withCredentials: true
+            });
+
+            if (data.signupStatus) {
+                toast.success("Employee account created! Redirecting to login...");
+                setTimeout(() => navigate('/employeelogin'), 2000);
             } else {
-                const errorMessage = result.data.error || "Signup failed. Please try again.";
-                toast.error(errorMessage);
+                toast.error(data.error || "Signup failed. Please try again.");
             }
         } catch (error) {
-            if (error.response?.status === 409) {
+            console.error('Signup error:', error);
+            if (error.response?.data?.errors) {
+                // Handle server-side validation errors
+                error.response.data.errors.forEach(err => {
+                    toast.error(err.msg);
+                });
+            } else if (error.response?.status === 409) {
                 toast.error("Email already exists.");
             } else {
-                console.error(error);
-                toast.error("An error occurred during signup.");
+                toast.error(error.response?.data?.error || "An error occurred during signup.");
             }
         } finally {
             setLoading(false);
@@ -90,21 +122,23 @@ function EmployeeSignup() {
                                 <label htmlFor='name' className="form-label" style={{
                                     color: '#5e72e4',
                                     fontWeight: '500'
-                                }}>Full Name:</label>
+                                }}>Name:</label>
                                 <input
                                     type="text"
                                     name='name'
+                                    autoComplete='off'
                                     placeholder='John Doe'
                                     value={values.name}
                                     onChange={handleInputChange}
                                     style={{
-                                        border: '1px solid #a1c4fd',
+                                        border: errors.name ? '1px solid #ff3860' : '1px solid #a1c4fd',
                                         borderRadius: '8px',
                                         padding: '10px',
                                         width: '100%',
-                                        marginBottom: '15px'
+                                        marginBottom: '5px'
                                     }}
                                 />
+                                {errors.name && <div style={{ color: '#ff3860', fontSize: '0.8rem', marginBottom: '10px' }}>{errors.name}</div>}
                             </div>
                             <div className="mb-3">
                                 <label htmlFor='email' className="form-label" style={{
@@ -114,17 +148,19 @@ function EmployeeSignup() {
                                 <input
                                     type="email"
                                     name='email'
-                                    placeholder='employee@company.com'
+                                    autoComplete='off'
+                                    placeholder='employee@example.com'
                                     value={values.email}
                                     onChange={handleInputChange}
                                     style={{
-                                        border: '1px solid #a1c4fd',
+                                        border: errors.email ? '1px solid #ff3860' : '1px solid #a1c4fd',
                                         borderRadius: '8px',
                                         padding: '10px',
                                         width: '100%',
-                                        marginBottom: '15px'
+                                        marginBottom: '5px'
                                     }}
                                 />
+                                {errors.email && <div style={{ color: '#ff3860', fontSize: '0.8rem', marginBottom: '10px' }}>{errors.email}</div>}
                             </div>
                             <div className="mb-3">
                                 <label htmlFor='password' className="form-label" style={{
@@ -134,17 +170,18 @@ function EmployeeSignup() {
                                 <input
                                     type="password"
                                     name='password'
-                                    placeholder='At least 8 characters'
+                                    placeholder='Your password (min 8 characters)'
                                     value={values.password}
                                     onChange={handleInputChange}
                                     style={{
-                                        border: '1px solid #a1c4fd',
+                                        border: errors.password ? '1px solid #ff3860' : '1px solid #a1c4fd',
                                         borderRadius: '8px',
                                         padding: '10px',
                                         width: '100%',
-                                        marginBottom: '15px'
+                                        marginBottom: '5px'
                                     }}
                                 />
+                                {errors.password && <div style={{ color: '#ff3860', fontSize: '0.8rem', marginBottom: '10px' }}>{errors.password}</div>}
                             </div>
                             <div className="mb-3">
                                 <label htmlFor='confirmPassword' className="form-label" style={{
@@ -154,19 +191,19 @@ function EmployeeSignup() {
                                 <input
                                     type="password"
                                     name='confirmPassword'
-                                    placeholder='Re-enter password'
+                                    placeholder='Confirm password'
                                     value={values.confirmPassword}
                                     onChange={handleInputChange}
                                     style={{
-                                        border: '1px solid #a1c4fd',
+                                        border: errors.confirmPassword ? '1px solid #ff3860' : '1px solid #a1c4fd',
                                         borderRadius: '8px',
                                         padding: '10px',
                                         width: '100%',
-                                        marginBottom: '15px'
+                                        marginBottom: '5px'
                                     }}
                                 />
+                                {errors.confirmPassword && <div style={{ color: '#ff3860', fontSize: '0.8rem', marginBottom: '10px' }}>{errors.confirmPassword}</div>}
                             </div>
-                            {/* Optional: Position/Role Field */}
                             <div className="mb-3">
                                 <label htmlFor='position' className="form-label" style={{
                                     color: '#5e72e4',
@@ -183,12 +220,12 @@ function EmployeeSignup() {
                                         borderRadius: '8px',
                                         padding: '10px',
                                         width: '100%',
-                                        marginBottom: '20px'
+                                        marginBottom: '5px'
                                     }}
                                 />
                             </div>
-                            <button
-                                type="submit"
+                            <button 
+                                type="submit" 
                                 disabled={loading}
                                 style={{
                                     background: 'linear-gradient(to right, #667eea, #764ba2)',
@@ -201,29 +238,24 @@ function EmployeeSignup() {
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     opacity: loading ? 0.7 : 1,
                                     transition: 'all 0.3s ease',
-                                    ':hover': !loading ? {
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: '0 7px 14px rgba(102, 126, 234, 0.3)'
-                                    } : {}
+                                    marginTop: '10px'
                                 }}
                             >
-                                {loading ? 'Creating account...' : 'Sign Up'}
+                                {loading ? 'Creating Account...' : 'Sign Up'}
                             </button>
+                            
                             <div style={{
                                 textAlign: 'center',
                                 marginTop: '20px',
                                 color: '#5e72e4'
                             }}>
-                                <span>Already have an account? </span>
-                                <Link
-                                    to="/employeelogin"
+                                Already have an account?{' '}
+                                <Link 
+                                    to="/employeelogin" 
                                     style={{
                                         color: '#764ba2',
                                         fontWeight: '600',
-                                        textDecoration: 'none',
-                                        ':hover': {
-                                            textDecoration: 'underline'
-                                        }
+                                        textDecoration: 'none'
                                     }}
                                 >
                                     Login

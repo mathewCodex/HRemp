@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import Admin from "../../../Server/models/Admin"
 
 function AdminLogin() {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';

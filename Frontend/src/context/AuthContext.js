@@ -1,38 +1,106 @@
-// src/context/AuthContext.js
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// context/AuthContext.js
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState(() => {
-    const storedAuth = localStorage.getItem('auth');
-    return storedAuth ? JSON.parse(storedAuth) : null;
-  });
-  const navigate = useNavigate();
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-  const login = (data) => {
-    const authData = {
-      isAuthenticated: true,
-      token: data.token,
-      user: data.user
-    };
-    localStorage.setItem('auth', JSON.stringify(authData));
-    setAuth(authData);
-    navigate('/dashboard');
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication status on app load
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/verify', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      
+      if (data.Status && data.user) {
+        setUser(data.user);
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth');
-    setAuth(null);
-    navigate('/login');
+  const login = async (email, password) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        setUser(data.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        return { success: false, error: data.Error || 'Login failed' };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+  };
+
+  const value = {
+    user,
+    isAuthenticated,
+    loading,
+    login,
+    logout,
+    checkAuthStatus,
   };
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

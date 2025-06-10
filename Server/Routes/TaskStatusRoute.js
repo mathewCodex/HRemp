@@ -1,5 +1,6 @@
 import express from "express";
-import db from "../utils/db.js";
+import Task from "../models/Task.js"; // You'll need to create this model
+import TaskAssignment from "../models/TaskAssignment.js"; // You'll need to create this model
 import { io } from "../index.js";
 
 const router = express.Router();
@@ -20,48 +21,105 @@ router.put("/:taskId", async (req, res) => {
     });
   }
 
-  try {
-    // 1. Fetch the task from the database
-    const taskResult = await db.query(
-      "SELECT * FROM tasks WHERE task_id = $1",
-      [taskId]
-    );
+  // Validate status value (optional - add your valid statuses)
+  const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+  if (!validStatuses.includes(status.toLowerCase())) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid status value",
+    });
+  }
 
-    if (taskResult.rows.length === 0) {
+  try {
+    // 1. Check if task exists and fetch it
+    const task = await Task.findById(taskId);
+
+    if (!task) {
       return res
         .status(404)
         .json({ success: false, message: "Task not found" });
     }
 
-    // 2. Perform the update operation on the task
-    const updateQuery = `
-      UPDATE tasks
-      SET status = $1,
-          updated_at = NOW()
-      WHERE task_id = $2
-      RETURNING *;
-    `;
-    const { rows } = await db.query(updateQuery, [status, taskId]);
-    const updatedTask = rows[0];
-
-    // 3. Real-time notifications after task update
-    const assignedRows = await db.query(
-      "SELECT employee_id FROM task_assignments WHERE task_id = $1",
-      [taskId]
+    // 2. Update the task status
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { 
+        status: status,
+        updated_at: new Date()
+      },
+      { 
+        new: true, // Return the updated document
+        runValidators: true // Run schema validators
+      }
     );
 
+    // 3. Get all assigned employees for real-time notifications
+    const taskAssignments = await TaskAssignment.find({ task_id: taskId });
+
     // Notify all assigned employees
-    assignedRows.rows.forEach((row) => {
-      io.to(`user_${row.employee_id}`).emit("taskUpdated", {
+    taskAssignments.forEach((assignment) => {
+      io.to(`user_${assignment.employee_id}`).emit("taskUpdated", {
         taskId,
         status,
         message: `Task #${taskId} has been updated`,
+        updatedTask: updatedTask
       });
     });
 
     return res.status(200).json({ success: true, task: updatedTask });
   } catch (error) {
     console.error("Error updating task:", error);
+    
+    // Handle specific MongoDB errors
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid task ID format" 
+      });
+    }
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: error.message 
+      });
+    }
+    
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+});
+
+/**
+ * GET /taskstatus/:taskId
+ * Get the current status of a task.
+ */
+router.get("/:taskId", async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    const task = await Task.findById(taskId).select('status updated_at');
+    
+    if (!task) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      status: task.status,
+      lastUpdated: task.updated_at
+    });
+  } catch (error) {
+    console.error("Error fetching task status:", error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid task ID format" 
+      });
+    }
+    
     return res.status(500).json({ success: false, message: "Server Error" });
   }
 });

@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "react-bootstrap";
-import SidebarClose from "../assets/SidebarClose";
-import SidebarOpen from "../assets/SidebarOpen";
+import SidebarClose from "../../assets/SidebarClose";
+import SidebarOpen from "../../assets/SidebarOpen";
 
-const Sidebar = ({ sidebarOpen, toggleSidebar, handleLogout }) => {
+const EmployeeSidebar = ({ sidebarOpen, toggleSidebar, handleLogout }) => {
   const location = useLocation();
 
   return (
@@ -52,11 +52,11 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, handleLogout }) => {
         >
           <li className="w-100">
             <Link
-              to="/dashboard"
+              to="/employeedashboard"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard" ? "active" : ""
+                location.pathname === "/employeedashboard" ? "active" : ""
               }`}
               title={!sidebarOpen ? "Dashboard" : ""}
             >
@@ -72,141 +72,121 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, handleLogout }) => {
           </li>
           <li className="w-100">
             <Link
-              to="/dashboard/employee"
+              to="/dashboard/profile"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/employee" ? "active" : ""
+                location.pathname === "/dashboard/profile" ? "active" : ""
               }`}
-              title={!sidebarOpen ? "Employees" : ""}
+              title={!sidebarOpen ? "Personal Profile" : ""}
             >
-              <i className="fs-5 mx-1 bi-people"></i>
+              <i className="fs-5 mx-1 bi bi-person-circle"></i>
               <span
                 className={`ms-2 d-none d-sm-inline ${
                   !sidebarOpen ? "hidden" : ""
                 }`}
               >
-                Employees
+                Personal Profile
               </span>
             </Link>
           </li>
           <li className="w-100">
             <Link
-              to="/dashboard/category"
+              to="/employeedashboard/employeeattendance"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/category" ? "active" : ""
+                location.pathname === "/dashboard/attendance" ? "active" : ""
               }`}
-              title={!sidebarOpen ? "Category" : ""}
+              title={!sidebarOpen ? "Attendance & Time" : ""}
             >
-              <i className="fs-5 mx-1 bi bi-tags"></i>
+              <i className="fs-5 mx-1 bi bi-clock-history"></i>
               <span
                 className={`ms-2 d-none d-sm-inline ${
                   !sidebarOpen ? "hidden" : ""
                 }`}
               >
-                Categories
+                Attendance & Time
               </span>
             </Link>
           </li>
           <li className="w-100">
             <Link
-              to="/dashboard/clients"
+              to="/dashboard/leave"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/clients" ? "active" : ""
+                location.pathname === "/employeedashboard/employeeleave" ? "active" : ""
               }`}
-              title={!sidebarOpen ? "Clients" : ""}
+              title={!sidebarOpen ? "Leave Management" : ""}
             >
-              <i className="fs-5 mx-1 bi bi-briefcase"></i>
+              <i className="fs-5 mx-1 bi bi-calendar-x"></i>
               <span
                 className={`ms-2 d-none d-sm-inline ${
                   !sidebarOpen ? "hidden" : ""
                 }`}
               >
-                Clients
+                Leave Management
               </span>
             </Link>
           </li>
           <li className="w-100">
             <Link
-              to="/dashboard/projects"
+              to="/employeedashboard/employeeperformance"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/projects" ? "active" : ""
+                location.pathname === "/dashboard/performance" ? "active" : ""
               }`}
-              title={!sidebarOpen ? "Projects" : ""}
+              title={!sidebarOpen ? "Performance & Goals" : ""}
             >
-              <i className="fs-5 mx-1 bi bi-layers"></i>
+              <i className="fs-5 mx-1 bi bi-trophy"></i>
               <span
                 className={`ms-2 d-none d-sm-inline ${
                   !sidebarOpen ? "hidden" : ""
                 }`}
               >
-                Projects
+                Performance & Goals
               </span>
             </Link>
           </li>
           <li className="w-100">
             <Link
-              to="/dashboard/tasks"
+              to="/employeedashboard/employeepayroll"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/tasks" ? "active" : ""
+                location.pathname === "/dashboard/payroll" ? "active" : ""
               }`}
-              title={!sidebarOpen ? "Tasks" : ""}
+              title={!sidebarOpen ? "Payroll & Benefits" : ""}
             >
-              <i className="fs-5 mx-1 bi bi-list-ul"></i>
+              <i className="fs-5 mx-1 bi bi-currency-dollar"></i>
               <span
                 className={`ms-2 d-none d-sm-inline ${
                   !sidebarOpen ? "hidden" : ""
                 }`}
               >
-                Assignments
+                Payroll & Benefits
               </span>
             </Link>
           </li>
           <li className="w-100">
             <Link
-              to="/dashboard/officeaddress"
+              to="/employeedashboard/employeenotifications"
               className={`nav-link text-white ${
                 sidebarOpen ? "px-3" : "px-1 justify-content-center"
               } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/officeaddress" ? "active" : ""
+                location.pathname === "/employeedashboard/employeenotifications" ? "active" : ""
               }`}
-              title={!sidebarOpen ? "Office" : ""}
+              title={!sidebarOpen ? "Notifications" : ""}
             >
-              <i className="fs-5 mx-1 bi bi-geo-alt"></i>
+              <i className="fs-5 mx-1 bi bi-bell"></i>
               <span
                 className={`ms-2 d-none d-sm-inline ${
                   !sidebarOpen ? "hidden" : ""
                 }`}
               >
-                Workplaces
-              </span>
-            </Link>
-          </li>
-          <li className="w-100">
-            <Link
-              to="/dashboard/manageadmin"
-              className={`nav-link text-white ${
-                sidebarOpen ? "px-3" : "px-1 justify-content-center"
-              } my-1 py-2 align-middle ${
-                location.pathname === "/dashboard/manageadmin" ? "active" : ""
-              }`}
-              title={!sidebarOpen ? "Admins" : ""}
-            >
-              <i className="fs-5 mx-1 bi-person"></i>
-              <span
-                className={`ms-2 d-none d-sm-inline ${
-                  !sidebarOpen ? "hidden" : ""
-                }`}
-              >
-                Admins
+                Notifications
               </span>
             </Link>
           </li>
@@ -251,4 +231,4 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, handleLogout }) => {
   );
 };
 
-export default Sidebar;
+export default EmployeeSidebar;

@@ -5,8 +5,8 @@ import "./EmployeeDetails.css";
 import { useNavigate, Link } from "react-router-dom";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import ClockIn from "./ClockIn";
-import EmployeeCalendar from "./EmployeeCalendar";
-import EmployeeTasks from "./PMT/EmployeeTasks";
+import EmployeeCalendar from "../Admin/EmployeeCalendar";
+import EmployeeTasks from "../PMT/EmployeeTasks";
 
 function EmployeeDetail() {
   const [employee, setEmployee] = useState(null);

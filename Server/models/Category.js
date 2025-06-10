@@ -5,4 +5,5 @@ const categorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("Category", categorySchema);
+// Prevent OverwriteModelError by checking if model already exists
+export default mongoose.models.Category || mongoose.model("Category", categorySchema);

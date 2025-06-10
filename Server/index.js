@@ -1,134 +1,3 @@
-// import express from "express";
-// import cors from "cors";
-// import { adminRouter } from "./Routes/AdminRoute.js";
-// import { employeeRouter } from "./Routes/EmployeeRoute.js";
-// import { projectRouter } from "./Routes/ProjectRoute.js";
-// import { taskRouter } from "./Routes/TaskRoute.js";
-// import { clientsRouter } from "./Routes/ClientsRoute.js";
-// import { taskStatusRouter } from "./Routes/TaskStatusRoute.js";
-// import { notificationRouter } from "./Routes/NotificationsRoute.js";
-// import { attendanceRouter } from "./Routes/AttendanceRoute.js";
-// import jwt from "jsonwebtoken";
-// import cookieParser from "cookie-parser";
-// import http from "http";
-// import { Server } from "socket.io";
-// import dotenv from "dotenv";
-// import connectDB from './utils/db.js';
-
-// // Load environment variables
-// dotenv.config();
-
-// const app = express();
-
-// // Database connection
-// connectDB();
-
-// // Middleware setup
-// app.use(cors({
-//     origin: process.env.CLIENT_URL || 'http://localhost:5173',
-//     credentials: true,
-//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//     allowedHeaders: ['Content-Type', 'Authorization']
-//   })
-// );
-// app.use(express.json());
-// app.use(cookieParser());
-// app.use(express.static("Public"));
-
-// // Middleware to verify user authentication
-// const verifyUser = (req, res, next) => {
-//   const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
-  
-//   if (!token) {
-//     return res.status(401).json({ Status: false, Error: "Not Authenticated" });
-//   }
-
-//   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-//     if (err) {
-//       return res.status(403).json({ Status: false, Error: "Invalid Token" });
-//     }
-
-//     req.user = await User.findById(decoded.id).select('-password');
-//     if (!req.user) {
-//       return res.status(404).json({ Status: false, Error: "User not found" });
-//     }
-
-//     req.role = decoded.role;
-//     req.id = decoded.id;
-//     next();
-//   });
-// };
-
-// // Routes setup
-// app.use("/api/auth", adminRouter);
-// app.use("/api/employee", employeeRouter);
-// app.use("/api/projects", projectRouter);
-// app.use("/api/tasks", taskRouter);
-// app.use("/api/clients", clientsRouter);
-// app.use("/api/taskstatus", taskStatusRouter);
-// app.use("/api/notifications", notificationRouter);
-// app.use("/api/attendance", attendanceRouter);
-
-// // Verify route
-// app.get("/verify", verifyUser, (req, res) => {
-//   return res.json({ Status: true, role: req.role, id: req.id });
-// });
-
-// // Health check endpoint
-// app.get("/health", (req, res) => {
-//   res.status(200).json({
-//     status: "healthy",
-//     timestamp: new Date().toISOString()
-//   });
-// });
-
-// // Create HTTP server
-// const server = http.createServer(app);
-
-// // Initialize Socket.io
-// export const io = new Server(server, {
-//   cors: {
-//     origin: process.env.CLIENT_URL || "http://localhost:5173",
-//     methods: ["GET", "POST", "PUT", "DELETE"],
-//     credentials: true,
-//   },
-// });
-
-// // Socket.io connection handler
-// io.on("connection", (socket) => {
-//   console.log(`User connected with socket ID: ${socket.id}`);
-
-//   // Listen for a "join" event to place a user in a room
-//   socket.on("join", (userId) => {
-//     socket.join(`user_${userId}`);
-//     console.log(`Socket ${socket.id} joined room user_${userId}`);
-//   });
-
-//   // Add error handling for Socket.io
-//   socket.on("error", (err) => {
-//     console.error("Socket Error:", err);
-//   });
-
-//   socket.on("disconnect", () => {
-//     console.log(`User disconnected with socket ID: ${socket.id}`);
-//   });
-// });
-
-// // In server.js add:
-// app.get('/api/debug/cookies', (req, res) => {
-//   res.json({
-//     cookies: req.cookies,
-//     headers: req.headers
-//   });
-// });
-
-// // Start server on port
-// const port = process.env.PORT || 5000;
-// server.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-//   console.log(`CORS configured for: ${process.env.CLIENT_URL || "http://localhost:5173"}`);
-// });
-
 import express from "express";
 import cors from "cors";
 import { adminRouter } from "./Routes/AdminRoute.js";
@@ -137,26 +6,37 @@ import { projectRouter } from "./Routes/ProjectRoute.js";
 import { taskRouter } from "./Routes/TaskRoute.js";
 import { clientsRouter } from "./Routes/ClientsRoute.js";
 import { taskStatusRouter } from "./Routes/TaskStatusRoute.js";
-import { notificationRouter } from "./Routes/NotificationsRoute.js";
+import { notificationRouter } from "./Routes/NotificationRoute.js";
 import { attendanceRouter } from "./Routes/AttendanceRoute.js";
+import { leaveRouter } from "./Routes/LeaveRouter.js";
+
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
-import connectDB from './utils/db.js';
+import { connectDB, getDB } from './utils/db.js'; // Changed this line
+import { ObjectId } from 'mongodb';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Database connection
-connectDB();
+// Initialize database connection
+const initializeServer = async () => {
+  try {
+    // Connect to database first
+    await connectDB();
+    console.log('Database connected successfully');
+  } catch (error) {
+    console.error('Failed to connect to database:', error);
+    process.exit(1);
+  }
+};
 
-// Import User model (you'll need to create this based on your schema)
-// This is a placeholder - replace with your actual User model
-import User from './models/User.js'; // Adjust path as needed
+// Initialize the database connection
+await initializeServer();
 
 // Middleware setup
 app.use(cors({
@@ -181,8 +61,15 @@ const verifyUser = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Find user by ID from token
-    const user = await User.findById(decoded.id).select('-password');
+    // Get database instance
+    const db = getDB();
+    
+    // Find user by ID from token using raw MongoDB
+    const user = await db.collection("employees").findOne(
+      { _id: new ObjectId(decoded.id) },
+      { projection: { password: 0 } } // Exclude password
+    );
+    
     if (!user) {
       return res.status(404).json({ Status: false, Error: "User not found", success: false });
     }
@@ -198,35 +85,68 @@ const verifyUser = async (req, res, next) => {
 };
 
 // Routes setup
-app.use("/api/auth", adminRouter);
-app.use("/api/employee", employeeRouter);
-app.use("/api/projects", projectRouter);
-app.use("/api/tasks", taskRouter);
-app.use("/api/clients", clientsRouter);
-app.use("/api/taskstatus", taskStatusRouter);
-app.use("/api/notifications", notificationRouter);
-app.use("/api/attendance", attendanceRouter);
+// Routes setup with verifyUser  middleware
+app.use("/api/auth", adminRouter); // Assuming auth routes don't need verification
+app.use("/api/employee", verifyUser , employeeRouter);
+app.use("/api/projects", verifyUser , projectRouter);
+app.use("/api/tasks", verifyUser , taskRouter);
+app.use("/api/clients", verifyUser , clientsRouter);
+app.use("/api/taskstatus", verifyUser , taskStatusRouter);
+app.use("/api/notification", verifyUser , notificationRouter);
+app.use("/api/attendance", verifyUser , attendanceRouter);
+app.use("/api/leave", verifyUser , leaveRouter);
 
-// Verify route - Updated to match frontend expectations
-app.get("/api/verify", verifyUser, (req, res) => {
-  return res.json({ 
-    Status: true, 
-    success: true,
-    role: req.role, 
-    id: req.id,
-    user: req.user
-  });
+app.get('/api/verify', (req, res) => {
+  try {
+    // Check for token in cookies (since you're using withCredentials: true)
+    const token = req.cookies.jwt;
+    
+    if (!token) {
+      return res.json({ 
+        Status: false, 
+        message: 'No token provided' 
+      });
+    }
+
+    // Verify the JWT token
+    jwt.verify(token, process.env.JWT_SECRET || 'your-jwt-secret', (err, decoded) => {
+      if (err) {
+        return res.json({ 
+          Status: false, 
+          message: 'Invalid token' 
+        });
+      }
+
+      // Token is valid
+      res.json({ 
+        Status: true, 
+        message: 'Authenticated',
+        user: {
+          id: decoded.id,
+          email: decoded.email,
+          name: decoded.name
+        },
+        role: decoded.role
+      });
+    });
+
+  } catch (error) {
+    console.error('Verify endpoint error:', error);
+    res.json({ 
+      Status: false, 
+      message: 'Server error' 
+    });
+  }
 });
 
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    database: "connected"
   });
 });
-
-// This goes in your backend routes file (e.g., routes/auth.js)
 
 // Debug endpoint for cookies
 app.get('/api/debug/cookies', (req, res) => {
@@ -276,9 +196,13 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+
 // Start server
 const port = process.env.PORT || 5000;
 server.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-  console.log(`CORS configured for: ${process.env.CLIENT_URL || "http://localhost:5173"}`);
+  console.log(`🚀 Server is running on port ${port}`);
+  console.log(`🌐 CORS configured for: ${process.env.CLIENT_URL || "http://localhost:5173"}`);
+  console.log(`📊 Health check available at: http://localhost:${port}/health`);
 });
+
