@@ -16,7 +16,7 @@ yarn-error.log
 pnpm-debug.log
 
 # Ignore dependency lock files (optional)
-package-lock.json
+# package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
