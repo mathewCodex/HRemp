@@ -22,7 +22,7 @@ export async function connectDB() {
     });
 
     await mongoose.connect(
-      "mongodb+srv://mathewCodex:for12345@cluster1.avjfq.mongodb.net/mern-blog-tut",
+      process.env.MONGO_URI,
       {
         useNewUrlParser: true,
         useUnifiedTopology: true,
