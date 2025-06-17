@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
+import { getDB } from "../utils/db.js"; // Import the database getter function
 const authController = {
   login: async (req, res) => {
     try {
@@ -14,48 +14,60 @@ const authController = {
           error: "Email and password are required",
         });
       }
+      const db = getDB(); // Get database instance
 
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(401).json({  // Changed from 404 to 401 for security
-          success: false,
-          error: "Invalid credentials", // Generic message for security
+      // Find user by email
+      const user = await db.collection("employees").findOne({ email: email });
+
+      if (user) {
+        const storedHashedPassword = user.password;
+
+        const passwordsMatch = await bcrypt.compare(
+          password,
+          storedHashedPassword
+        );
+
+        if (passwordsMatch) {
+          const token = jwt.sign(
+            { role: "employee", email: user.email, id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+          );
+
+          // Set JWT token as a cookie
+          res.cookie("jwt", token, {
+            httpOnly: true,
+            maxAge: 3600000,
+            secure: process.env.NODE_ENV === "production",
+          });
+
+          // Send success response
+          return res.status(200).json({
+            loginStatus: true,
+            message: "You are logged in",
+            //  id: user._id,
+            token, // Also send token in response for frontend storage
+            user: {
+              _id: user._id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+            },
+          });
+        } else {
+          // Send response for incorrect password
+          return res.status(401).json({
+            loginStatus: false,
+            error: "Incorrect Email or Password",
+          });
+        }
+      } else {
+        // Send response for user not found
+        return res.status(404).json({
+          loginStatus: false,
+          error: "User not found",
         });
       }
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(401).json({
-          success: false,
-          error: "Invalid credentials",
-        });
-      }
-
-      const token = jwt.sign(
-        { id: user._id, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }  // Reduced from 10d for better security
-      );
-
-      // Set HTTP-only cookie
-      res.cookie("jwt", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: "Login successful",
-        token, // Also send token in response for frontend storage
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      });
     } catch (error) {
       console.error("Login error:", error);
       return res.status(500).json({
@@ -87,66 +99,88 @@ const authController = {
 
   signup: async (req, res) => {
     try {
-      const { name, email, password, role } = req.body;
-
+      const { name, email, password, position } = req.body;
+      // const role = position;
       // Input validation
-      if (!name || !email || !password) {
+      if (!name || !email || !password || !position) {
         return res.status(400).json({
           success: false,
-          error: "Name, email and password are required",
+          error: "Name, email and password  or position are required",
         });
       }
-
+      const role = position;
       if (!["admin", "employee"].includes(role)) {
         return res.status(400).json({
           success: false,
           error: "Invalid role specified",
         });
       }
+      const db = getDB();
 
-      const existingUser = await User.findOne({ email });
+      // Check if user already exists
+      const existingUser = await db
+        .collection("employees")
+        .findOne({ email: email });
+
       if (existingUser) {
-        return res.status(409).json({  // Changed to 409 Conflict
-          success: false,
-          error: "User already exists",
+        return res.status(409).json({
+          signupStatus: false,
+          error: "Email already exists",
         });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 12); // Increased salt rounds
-
-      const newUser = new User({
-        name,
-        email,
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      // Insert new employee into database
+      const newEmployee = {
+        name: name,
+        email: email,
         password: hashedPassword,
-        role,
-      });
+        role: position || "Employee",
+        createdAt: new Date(),
+      };
 
-      await newUser.save();
+      const result = await db.collection("employees").insertOne(newEmployee);
 
       const token = jwt.sign(
-        { id: newUser._id, role: newUser.role },
+        { id: result.insertedId, role: newEmployee.role },
         process.env.JWT_SECRET,
         { expiresIn: "1d" }
       );
 
       // Set HTTP-only cookie
-res.cookie("jwt", token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 24 * 60 * 60 * 1000, // 1 day
-  domain: process.env.NODE_ENV === "development" ? undefined : process.env.COOKIE_DOMAIN
-});
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        domain:
+          process.env.NODE_ENV === "development"
+            ? undefined
+            : process.env.COOKIE_DOMAIN,
+      });
 
+      // return res.status(201).json({
+      //   success: true,
+      //   message: "Signup successful",
+      //   token,
+      //   user: {
+      //     _id: newUser._id,
+      //     name: newUser.name,
+      //     email: newUser.email,
+      //     role: newUser.role,
+      //   },
+      // });
+      // Send success response
       return res.status(201).json({
-        success: true,
-        message: "Signup successful",
-        token,
-        user: {
-          _id: newUser._id,
-          name: newUser.name,
-          email: newUser.email,
-          role: newUser.role,
+        signupStatus: true,
+        message: "Employee account created successfully",
+        token, 
+        employee: {
+          id: result.insertedId,
+          name: name,
+          email: email,
+          role: newEmployee.role,
         },
       });
     } catch (error) {

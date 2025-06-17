@@ -21,15 +21,18 @@ export async function connectDB() {
       isConnected = true;
     });
 
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      retryWrites: true,
-      retryReads: true
-    });
+    await mongoose.connect(
+      "mongodb+srv://mathewCodex:for12345@cluster1.avjfq.mongodb.net/mern-blog-tut",
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        maxPoolSize: 10,
+        retryWrites: true,
+        retryReads: true,
+      }
+    );
 
     isConnected = true;
     console.log(`MongoDB Connected: ${mongoose.connection.host}`);

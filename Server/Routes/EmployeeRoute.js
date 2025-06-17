@@ -216,15 +216,14 @@ router.post("/employee_clockout/:id", async (req, res) => {
     
     // Update the clock-out time for the employee
     await db.collection("clock_records").updateOne(
-      { 
-        employee_id: new ObjectId(id), 
-        clock_out: null 
+      {
+        employee_id: new ObjectId(id),
+        clock_out: null,
       },
-      { 
-        $set: { clock_out: new Date() } 
+      {
+        $set: { clock_out: new Date() },
       }
     );
-
     // Send success response
     return res.status(200).json({ success: true });
   } catch (error) {
