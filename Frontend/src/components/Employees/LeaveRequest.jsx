@@ -5,32 +5,35 @@ import { format } from 'date-fns';
 import { io } from 'socket.io-client';
 
 const LeaveRequest = () => {
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    startDate: '',
-    endDate: '',
-    reason: ''
+    startDate: "",
+    endDate: "",
+    reason: "",
   });
   const [requests, setRequests] = useState([]);
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     // Connect to Socket.IO
-    const newSocket = io(process.env.REACT_APP_API_URL, {
-      withCredentials: true
+    const newSocket = io(import.meta.env.REACT_APP_API_URL, {
+      withCredentials: true,
     });
     setSocket(newSocket);
 
     // Join user's room
     if (user?.id) {
-      newSocket.emit('join', user.id);
+      newSocket.emit("join", user.id);
     }
 
     // Listen for leave status updates
-    newSocket.on('leave_status_update', (data) => {
-      setRequests(prev => prev.map(req => 
-        req._id === data.requestId ? { ...req, status: data.status } : req
-      ));
+    newSocket.on("leave_status_update", (data) => {
+      setRequests((prev) =>
+        prev.map((req) =>
+          req._id === data.requestId ? { ...req, status: data.status } : req
+        )
+      );
     });
 
     // Clean up on unmount
@@ -45,38 +48,38 @@ const LeaveRequest = () => {
 
   const fetchLeaveRequests = async () => {
     try {
-      const response = await axios.get('/api/leave/my-requests', {
-        withCredentials: true
+      const response = await axios.get(`${apiUrl}/api/leave/my-requests`, {
+        withCredentials: true,
       });
       setRequests(response.data.data);
     } catch (error) {
-      console.error('Error fetching leave requests:', error);
+      console.error("Error fetching leave requests:", error);
     }
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/leave', formData, {
-        withCredentials: true
+      await axios.post("/api/leave", formData, {
+        withCredentials: true,
       });
-      alert('Leave request submitted successfully!');
+      alert("Leave request submitted successfully!");
       setFormData({
-        startDate: '',
-        endDate: '',
-        reason: ''
+        startDate: "",
+        endDate: "",
+        reason: "",
       });
       fetchLeaveRequests();
     } catch (error) {
-      console.error('Error submitting leave request:', error);
-      alert('Failed to submit leave request');
+      console.error("Error submitting leave request:", error);
+      alert("Failed to submit leave request");
     }
   };
 

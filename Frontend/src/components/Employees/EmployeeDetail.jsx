@@ -13,8 +13,8 @@ function EmployeeDetail() {
   const [category, setCategory] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
-
+  // const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
   useEffect(() => {
     axios
       .get(`${apiUrl}/employee/detail/${id}`)

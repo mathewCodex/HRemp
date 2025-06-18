@@ -33,7 +33,7 @@ const Clients = () => {
 
   const handleAddClient = () => {
     axios
-      .post(`${apiUrl}/clients`, newClient)
+      .post(`${apiUrl}/clients/`, newClient)
       .then((res) => {
         if (res.data.success) {
           setClients([...clients, res.data.client]);

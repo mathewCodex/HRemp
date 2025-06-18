@@ -5,14 +5,14 @@ import "./EmployeeTasks.css";
 import io from "socket.io-client";
 import axios from "axios";
 
-const socket = io("http://localhost:5000", {
+const socket = io(import.meta.env.VITE_API_BASE_URL, {
   withCredentials: true,
-  transports: ["websocket"] // Force WebSocket protocol
+  transports: ["websocket"], // Force WebSocket protocol
 });
 const EmployeeTasks = ({ employeeId }) => {
   const [tasks, setTasks] = useState([]);
-  const apiUrl = import.meta.env.VITE_API_URL;
-
+  // const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
   useEffect(() => {
     if (!employeeId) {
       console.error("Employee ID is undefined");

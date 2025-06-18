@@ -5,13 +5,13 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function EmployeeSignup() {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
     const [values, setValues] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        position: ''
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      position: "",
     });
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -19,77 +19,84 @@ function EmployeeSignup() {
     axios.defaults.withCredentials = true;
 
     const validateForm = () => {
-        const newErrors = {};
-        
-        if (!values.name.trim()) newErrors.name = 'Name is required';
-        if (!values.email.trim()) {
-            newErrors.email = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-            newErrors.email = 'Please enter a valid email';
-        }
-        if (!values.password) {
-            newErrors.password = 'Password is required';
-        } else if (values.password.length < 8) {
-            newErrors.password = 'Password must be at least 8 characters';
-        }
-        if (values.password !== values.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
-        }
-        
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+      const newErrors = {};
+
+      if (!values.name.trim()) newErrors.name = "Name is required";
+      if (!values.email.trim()) {
+        newErrors.email = "Email is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+        newErrors.email = "Please enter a valid email";
+      }
+      if (!values.password) {
+        newErrors.password = "Password is required";
+      } else if (values.password.length < 8) {
+        newErrors.password = "Password must be at least 8 characters";
+      }
+      if (values.password !== values.confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match";
+      }
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setValues({ ...values, [name]: value });
-        // Clear error when user types
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
+      const { name, value } = e.target;
+      setValues({ ...values, [name]: value });
+      // Clear error when user types
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+      }
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!validateForm()) {
-            return;
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const { data } = await axios.post(
+          `${apiUrl}/api/auth/signup`,
+          {
+            name: values.name,
+            email: values.email,
+            password: values.password,
+            position: values.position,
+            role: "employee",
+          },
+          {
+            withCredentials: true,
+          }
+        );
+       
+        console.log(data);
+        if (data.signupStatus) {
+          toast.success("Employee account created! Redirecting to login...");
+          setTimeout(() => navigate("/employeelogin"), 2000);
+        } else {
+          toast.error(data.error || "Signup failed. Please try again.");
         }
-
-        setLoading(true);
-
-        try {
-            const { data } = await axios.post(`${apiUrl}/employee/employeesignup`, {
-                name: values.name,
-                email: values.email,
-                password: values.password,
-                position: values.position,
-                role: 'employee'
-            }, {
-                withCredentials: true
-            });
-
-            if (data.signupStatus) {
-                toast.success("Employee account created! Redirecting to login...");
-                setTimeout(() => navigate('/employeelogin'), 2000);
-            } else {
-                toast.error(data.error || "Signup failed. Please try again.");
-            }
-        } catch (error) {
-            console.error('Signup error:', error);
-            if (error.response?.data?.errors) {
-                // Handle server-side validation errors
-                error.response.data.errors.forEach(err => {
-                    toast.error(err.msg);
-                });
-            } else if (error.response?.status === 409) {
-                toast.error("Email already exists.");
-            } else {
-                toast.error(error.response?.data?.error || "An error occurred during signup.");
-            }
-        } finally {
-            setLoading(false);
+      } catch (error) {
+        console.error("Signup error:", error);
+        if (error.response?.data?.errors) {
+          // Handle server-side validation errors
+          error.response.data.errors.forEach((err) => {
+            toast.error(err.msg);
+          });
+        } else if (error.response?.status === 409) {
+          toast.error("Email already exists.");
+        } else {
+          toast.error(
+            error.response?.data?.error || "An error occurred during signup."
+          );
         }
+      } finally {
+        setLoading(false);
+      }
     };
 
     return (

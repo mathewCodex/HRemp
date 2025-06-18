@@ -12,9 +12,9 @@ import {
   Col,
 } from "react-bootstrap";
 
-const socket = io("http://localhost:5000", {
+const socket = io(import.meta.env.VITE_API_BASE_URL, {
   withCredentials: true,
-  transports: ["websocket"] // Force WebSocket protocol
+  transports: ["websocket"], // Force WebSocket protocol
 });
 const AdminTasks = () => {
   const { projectId } = useParams();
@@ -88,7 +88,7 @@ const AdminTasks = () => {
   // Fetch available projects
   const fetchProjects = () => {
     axios
-      .get(`${apiUrl}/projects`)
+      .get(`${apiUrl}/projects/`)
       .then((res) => {
         if (res.data.success) {
           setProjects(res.data.projects);

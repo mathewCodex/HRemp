@@ -11,9 +11,9 @@ import {
   Form,
 } from "react-bootstrap";
 
-const socket = io("http://localhost:5000", {
+const socket = io(import.meta.env.VITE_API_BASE_URL, {
   withCredentials: true,
-  transports: ["websocket"] // Force WebSocket protocol
+  transports: ["websocket"], // Force WebSocket protocol
 });
 const AdminProjects = () => {
   const [projects, setProjects] = useState([]);
@@ -63,7 +63,7 @@ const AdminProjects = () => {
 
   const fetchProjects = () => {
     axios
-      .get(`${apiUrl}/projects`, { withCredentials: true })
+      .get(`${apiUrl}/projects/`, { withCredentials: true })
       .then((res) => {
         if (res.data.success) {
           setProjects(res.data.projects);
@@ -86,7 +86,7 @@ const AdminProjects = () => {
   const handleAddProject = () => {
     const token = localStorage.getItem("jwt"); // Assuming the token is stored in localStorage
     axios
-      .post(`${apiUrl}/projects`, newProject, {
+      .post(`${apiUrl}/projects/`, newProject, {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,

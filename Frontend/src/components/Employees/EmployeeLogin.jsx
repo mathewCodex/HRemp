@@ -201,11 +201,11 @@ import { toast } from 'react-toastify';
 
 function EmployeeLogin() {
     // API base URL, adjusted for employee authentication
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'; 
-    
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
     const [values, setValues] = useState({
-        email: '',
-        password: ''
+      email: "",
+      password: "",
     });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -214,108 +214,111 @@ function EmployeeLogin() {
 
     // Configure axios to send cookies with requests
     useEffect(() => {
-        axios.defaults.withCredentials = true;
+      axios.defaults.withCredentials = true;
     }, []);
 
     // Check if already authenticated as an employee
     // This assumes your localStorage 'auth' object will correctly reflect the employee's role
     useEffect(() => {
-        const authData = JSON.parse(localStorage.getItem('auth'));
-        if (authData?.isAuthenticated && (authData.role === 'employee' || authData.role === 'admin')) {
-            // Redirect to employee dashboard if employee or admin is already logged in
-            navigate('/employeedashboard', { replace: true });
-        }
+      const authData = JSON.parse(localStorage.getItem("auth"));
+      if (
+        authData?.isAuthenticated &&
+        (authData.role === "employee" || authData.role === "admin")
+      ) {
+        // Redirect to employee dashboard if employee or admin is already logged in
+        navigate("/employeedashboard", { replace: true });
+      }
     }, [navigate]);
 
     // Form validation logic
     const validateForm = () => {
-        const newErrors = {};
-        if (!values.email.trim()) {
-            newErrors.email = 'Email address is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-            newErrors.email = 'Please enter a valid email address';
-        }
-        if (!values.password) {
-            newErrors.password = 'Password is required';
-        } else if (values.password.length < 8) {
-            newErrors.password = 'Password must be at least 8 characters long';
-        }
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+      const newErrors = {};
+      if (!values.email.trim()) {
+        newErrors.email = "Email address is required";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+      if (!values.password) {
+        newErrors.password = "Password is required";
+      } else if (values.password.length < 8) {
+        newErrors.password = "Password must be at least 8 characters long";
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
     };
 
     // Handler for input field changes
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setValues({ ...values, [name]: value });
-        // Clear error message for the field as user types
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
+      const { name, value } = e.target;
+      setValues({ ...values, [name]: value });
+      // Clear error message for the field as user types
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+      }
     };
 
     // Handler for form submission
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevent default form submission
-        if (!validateForm()) return; // Validate form inputs
+      e.preventDefault(); // Prevent default form submission
+      if (!validateForm()) return; // Validate form inputs
 
-        setLoading(true); // Start loading state
+      setLoading(true); // Start loading state
 
-        try {
-            // Send login request to the employee login endpoint
-            const response = await axios.post(
-                `${apiUrl}/employeelogin`, // Changed API endpoint
-                {
-                    email: values.email.trim(),
-                    password: values.password.trim()
-                },
-                {
-                    withCredentials: true, // Send cookies with the request
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
+      try {
+        // Send login request to the employee login endpoint
+        const response = await axios.post(
+          `${apiUrl}/api/auth/login`, // Changed API endpoint
+          {
+            email: values.email.trim(),
+            password: values.password.trim(),
+          },
+          {
+            withCredentials: true, // Send cookies with the request
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-            console.log('Employee Login response:', response.data); // Debug log
+        console.log("Employee Login response:", response.data); // Debug log
 
-            if (response.data.success) {
-                // Store authentication data in localStorage
-                // Ensure 'role' is correctly captured from your backend response (e.g., response.data.role)
-                const authData = {
-                    isAuthenticated: true,
-                    user: response.data.user || null, // Assuming user data comes in response.data.user
-                    role: response.data.role || 'employee' // Default to 'employee' if not explicitly provided
-                };
+        if (response.data.loginStatus) {
+          // Store authentication data in localStorage
+          // Ensure 'role' is correctly captured from your backend response (e.g., response.data.role)
+          const authData = {
+            isAuthenticated: true,
+            user: response.data.user || null, // Assuming user data comes in response.data.user
+            role: response.data.role || "employee", // Default to 'employee' if not explicitly provided
+          };
 
-                localStorage.setItem('auth', JSON.stringify(authData));
-                
-                toast.success('Employee Login successful!'); // Show success notification
-                
-                // Navigate to the employee dashboard upon successful login
-                navigate('/employeedashboard', { replace: true }); 
-            } else {
-                // Show error message from the backend, or a generic one
-                toast.error(response.data.message || 'Employee Login failed');
-            }
-        } catch (error) {
-            console.error('Employee Login error:', error); // Log the full error
+          localStorage.setItem("auth", JSON.stringify(authData));
+          console.log(authData);
+          toast.success("Employee Login successful!"); // Show success notification
 
-            // Handle specific error responses
-            if (error.response?.status === 401) {
-                toast.error('Invalid email or password');
-            } else if (error.response?.status === 500) {
-                toast.error('Server error. Please try again later.');
-            } else if (!error.response) {
-                // Network error (no response from server)
-                toast.error('Network error. Please check your connection.');
-            } else {
-                // Generic error for other HTTP status codes
-                toast.error(error.response?.data?.message || 'Employee Login failed');
-            }
-        } finally {
-            setLoading(false); // End loading state
+          // Navigate to the employee dashboard upon successful login
+          navigate("/EmployeeDashboard", { replace: true });
+        } else {
+          // Show error message from the backend, or a generic one
+          toast.error(response.data.message || "Employee Login failed");
         }
+      } catch (error) {
+        console.error("Employee Login error:", error); // Log the full error
+
+        // Handle specific error responses
+        if (error.response?.status === 401) {
+          toast.error("Invalid email or password");
+        } else if (error.response?.status === 500) {
+          toast.error("Server error. Please try again later.");
+        } else if (!error.response) {
+          // Network error (no response from server)
+          toast.error("Network error. Please check your connection.");
+        } else {
+          // Generic error for other HTTP status codes
+          toast.error(error.response?.data?.message || "Employee Login failed");
+        }
+      } finally {
+        setLoading(false); // End loading state
+      }
     };
     
 
