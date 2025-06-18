@@ -235,95 +235,6 @@ router.post("/adminsignup", [
   }
 });
 
-// Admin Login Route
-router.post("/adminlogin", authLimiter, [
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email address'),
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      success: false, 
-      errors: errors.array(),
-      message: "Invalid input data"
-    });
-  }
-
-  try {
-    const { email, password } = req.body;
-    
-    // Find admin user
-    const admin = await User.findOne({ 
-      email: email.toLowerCase(),
-      role: ROLES.ADMIN 
-    }).select('+password');
-
-    if (!admin) {
-      return res.status(401).json({ 
-        success: false, 
-        error: "Invalid credentials - admin account not found" 
-      });
-    }
-
-    // Verify password
-    const isPasswordValid = await admin.comparePassword(password.trim());
-    if (!isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        error: "Invalid credentials - incorrect password" 
-      });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        id: admin._id, 
-        role: admin.role,
-        email: admin.email 
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-
-    // Set HTTP-only cookie
-    res.cookie("jwt", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
-
-    return res.json({ 
-      success: true, 
-      message: "Login successful",
-      data: {
-        id: admin._id,
-        email: admin.email,
-        role: admin.role,
-        name: admin.name || admin.email.split('@')[0]
-      }
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    
-    if (err.name === 'MongooseError' || err.message.includes('timed out')) {
-      return res.status(504).json({ 
-        success: false, 
-        error: "Database connection timeout - please try again" 
-      });
-    }
-    
-    return res.status(500).json({ 
-      success: false, 
-      error: "Authentication service temporarily unavailable"
-    });
-  }
-});
 
 // Logout Route
 router.post("/logout", (req, res) => {
@@ -421,17 +332,21 @@ router.get("/employees", authorize([ROLES.ADMIN]), async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+  const employees = await db
+    .collection("employees")
+    .find({ role: ROLES.EMPLOYEE })
+    .select("-password")
+    .populate("category_id", "name")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+   
 
-    const employees = await User.find({ role: ROLES.EMPLOYEE })
-      .select('-password')
-      .populate('category_id', 'name')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await User.countDocuments({ role: ROLES.EMPLOYEE });
-
+    const total = await db
+      .collection("employees")
+      .countDocuments({ role: ROLES.EMPLOYEE });
+   
     res.json({ 
       success: true, 
       data: employees,
