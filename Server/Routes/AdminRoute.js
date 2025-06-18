@@ -14,7 +14,7 @@ import User from "../models/User.js";
 import Category from "../models/Category.js";
 import Admin from "../models/Admin.js";
 import { connectDB, getDB } from "../utils/db.js";
-
+import { getDB } from "../utils/db.js";
 dotenv.config();
 const router = express.Router();
 
@@ -70,7 +70,7 @@ const upload = multer({
     }
   }
 });
-
+const db = getDB(); 
 // Authentication Middleware
 const authenticate = async (req, res, next) => {
   try {
@@ -407,7 +407,10 @@ router.post("/employees", authorize([ROLES.ADMIN]), upload.single("image"), [
     const { name, email, password, address, salary, category_id } = req.body;
     
     // Check if email already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    // await db.collection("employees").insertOne(newEmployee);
+    const existingUser = await db
+      .collection("employees")
+      .findOne({ email: email.toLowerCase() });
     if (existingUser) {
       if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -431,7 +434,8 @@ router.post("/employees", authorize([ROLES.ADMIN]), upload.single("image"), [
     }
 
     // Create employee
-    const employee = await User.create({
+    
+    const employeeData = {
       name: name.trim(),
       email: email.toLowerCase(),
       password: password.trim(),
@@ -440,8 +444,8 @@ router.post("/employees", authorize([ROLES.ADMIN]), upload.single("image"), [
       image: req.file?.filename,
       category_id,
       role: ROLES.EMPLOYEE
-    });
-
+    }
+     const employee = await db.collection("employees").insertOne(employee);
     // Populate category for response
     await employee.populate('category_id', 'name');
 
@@ -582,7 +586,7 @@ router.get("/dashboard/stats", authorize([ROLES.ADMIN]), async (req, res) => {
   try {
     const [adminCount, employeeCount, totalSalaryResult, categoryCount] = await Promise.all([
       User.countDocuments({ role: ROLES.ADMIN }),
-      User.countDocuments({ role: ROLES.EMPLOYEE }),
+      await db.collection("employees").countDocuments({ role: ROLES.EMPLOYEE }),
       User.aggregate([
         { $match: { role: ROLES.EMPLOYEE, salary: { $exists: true } } },
         { $group: { _id: null, total: { $sum: "$salary" } } }
@@ -590,8 +594,10 @@ router.get("/dashboard/stats", authorize([ROLES.ADMIN]), async (req, res) => {
       Category.countDocuments()
     ]);
 
-    const recentEmployees = await User.find({ role: ROLES.EMPLOYEE })
-      .select('name email createdAt')
+    const recentEmployees = await db
+      .collection("employees")
+      .find({ role: ROLES.EMPLOYEE })
+      .select("name email createdAt")
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
