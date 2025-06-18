@@ -4,24 +4,52 @@ import axios from "axios";
 
 const EmployeeProfile = () => {
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
-  // const employees = [
-  //   { id: 1, name: 'Sarah Johnson', department: 'Marketing', status: 'Active', performance: 92, attendance: 98 },
-  //   { id: 2, name: 'Mike Chen', department: 'Development', status: 'Active', performance: 88, attendance: 85 },
-  //   { id: 3, name: 'Emily Davis', department: 'HR', status: 'Active', performance: 95, attendance: 100 },
-  //   { id: 4, name: 'James Wilson', department: 'Sales', status: 'Active', performance: 90, attendance: 92 }
-  // ];
-  const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState([
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      department: "Marketing",
+      status: "Active",
+      performance: 92,
+      attendance: 98,
+    },
+    {
+      id: 2,
+      name: "Mike Chen",
+      department: "Development",
+      status: "Active",
+      performance: 88,
+      attendance: 85,
+    },
+    {
+      id: 3,
+      name: "Emily Davis",
+      department: "HR",
+      status: "Active",
+      performance: 95,
+      attendance: 100,
+    },
+    {
+      id: 4,
+      name: "James Wilson",
+      department: "Sales",
+      status: "Active",
+      performance: 90,
+      attendance: 92,
+    },
+  ]);
   const [loading, setLoading] = useState(true); // optional loading state
   const [error, setError] = useState(null); // optional error state
   const user = JSON.parse(localStorage.getItem("auth"));
-  console.log(user.authData.user._id);
-  const userId = user.authData.user._id;
+  console.log(user);
+  const userId = user.user._id;
   useEffect(() => {
     const fetchEmployeedata = async () => {
       try {
         const response = await axios.get(
           `${apiUrl}/api/employee/detail/${userId}`
         ); // Update this to your actual endpoint
+        console.log(response);
         setEmployees(response.data.employees || []);
         console.log(response.data.employees);
       } catch (err) {

@@ -27,7 +27,7 @@ import Clients from "./components/PMT/Clients";
 import EmployeeSignup from "./components/Employees/EmployeeSignUp";
 
 // Move apiUrl outside the component for stable reference
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 // Constants for role management
 const ROLES = {

@@ -1,6 +1,6 @@
-import React, { useState, useNavigate } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar, Clock, DollarSign } from "lucide-react";
-
+import axios from "axios";
 const EmployeeNotifications = () => {
   const [notifications, setNotification] = useState([
     {
@@ -26,13 +26,11 @@ const EmployeeNotifications = () => {
     },
   ]);
 
-  const { id } = useParams();
-  const navigate = useNavigate();
   // const apiUrl = import.meta.env.VITE_API_URL;
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
   useEffect(() => {
     axios
-      .get(`${apiUrl}/notification/`)
+      .get(`${apiUrl}/api/notification/`)
       .then((result) => {
         if (result.data.success && Array.isArray(result.data.Result)) {
           setNotification(result.data.Result[0]);

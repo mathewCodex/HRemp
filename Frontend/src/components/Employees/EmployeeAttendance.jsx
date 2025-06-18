@@ -1,5 +1,5 @@
-import React from 'react';
-import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { CheckCircle, AlertCircle, Clock } from "lucide-react";
 
 const Attendance = () => {
   // const employees = [
@@ -8,21 +8,53 @@ const Attendance = () => {
   //   { id: 3, name: 'Emily Davis', department: 'HR', status: 'Active', performance: 95, attendance: 100 },
   //   { id: 4, name: 'James Wilson', department: 'Sales', status: 'Active', performance: 90, attendance: 92 }
   // ];
-  const [attendance, setAttendance] = useState([]);
+  const [attendance, setAttendance] = useState([
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      department: "Marketing",
+      status: "Active",
+      performance: 92,
+      attendance: 98,
+    },
+    {
+      id: 2,
+      name: "Mike Chen",
+      department: "Development",
+      status: "Active",
+      performance: 88,
+      attendance: 85,
+    },
+    {
+      id: 3,
+      name: "Emily Davis",
+      department: "HR",
+      status: "Active",
+      performance: 95,
+      attendance: 100,
+    },
+    {
+      id: 4,
+      name: "James Wilson",
+      department: "Sales",
+      status: "Active",
+      performance: 90,
+      attendance: 92,
+    },
+  ]);
   const [timeIn, setTimeIn] = useState([]);
   const [loading, setLoading] = useState(true); // optional loading state
   const [error, setError] = useState(null); // optional error state
-  const user = JSON.parse(localStorage.getItem("auth"));
-  console.log(user.authData.user._id);
-  const userId = user.authData.user._id;
-  const dateVal = new Date.now().toString();
+  // const user = JSON.parse(localStorage.getItem("auth"));
+  // console.log(user);
+  // const userId = user.user._id;
+  const now = new Date();
+
   useEffect(() => {
     const fetchEmployeedata = async () => {
       try {
         const response = await axios.get(`${apiUrl}/api/attendance/`); // Update this to your actual endpoint
-        const data = await axios.get(
-          `${apiUrl}/api/attendance/date/${dateVal}`
-        ); //
+        const data = await axios.get(`${apiUrl}/api/attendance/date/${now}`); //
         setAttendance(response.data.attendance || []);
         setTimeIn(data.data.attendance || []);
         // console.log(response.data.attendance);
@@ -34,7 +66,7 @@ const Attendance = () => {
       }
     };
     fetchEmployeedata();
-  }, [setEmployees, dateVal]);
+  }, [setAttendance, now]);
   // useEffect(() => {
   //   const getTimeArrival = async () => {
   //     try {
