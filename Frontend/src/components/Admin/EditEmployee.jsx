@@ -17,43 +17,46 @@ const EditEmployee = () => {
     const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
     useEffect(() => {
-        // Fetch categories
-        axios.get(`${apiUrl}/auth/category`)
-            .then(result => {
-                if (result.data.success) {
-                    setCategory(result.data.categories);
-                } else {
-                    alert(result.data.message);
-                }
-            })
-            .catch(err => console.log(err));
+      // Fetch categories
+      axios
+        .get(`${apiUrl}/api/auth/category`)
+        .then((result) => {
+          if (result.data.success) {
+            setCategory(result.data.categories);
+          } else {
+            alert(result.data.message);
+          }
+        })
+        .catch((err) => console.log(err));
 
-        // Fetch employee details
-        axios.get(`${apiUrl}/auth/employee/${id}`)
-            .then(result => {
-                const employeeData = result.data.Result[0];
-                setEmployee({
-                    name: employeeData.name,
-                    email: employeeData.email,
-                    address: employeeData.address,
-                    salary: employeeData.salary,
-                    category_id: employeeData.category_id,
-                });
-            })
-            .catch(err => console.log(err));
+      // Fetch employee details
+      axios
+        .get(`${apiUrl}/api/employee/${id}`)
+        .then((result) => {
+          const employeeData = result.data.Result[0];
+          setEmployee({
+            name: employeeData.name,
+            email: employeeData.email,
+            address: employeeData.address,
+            salary: employeeData.salary,
+            category_id: employeeData.category_id,
+          });
+        })
+        .catch((err) => console.log(err));
     }, [id]);
 
     const handleSubmit = (e) => {
-        e.preventDefault();
-        axios.put(`${apiUrl}/auth/edit_employee/${id}`, employee)
-            .then(result => {
-                if (result.data.success) {
-                    navigate('/dashboard/employee');
-                } else {
-                    alert(result.data.message);
-                }
-            })
-            .catch(err => console.log(err));
+      e.preventDefault();
+      axios
+        .put(`${apiUrl}/api/employee/edit_employee/${id}`, employee)
+        .then((result) => {
+          if (result.data.success) {
+            navigate("/dashboard/employee");
+          } else {
+            alert(result.data.message);
+          }
+        })
+        .catch((err) => console.log(err));
     };
     const handleNavigateBack = () => {
         navigate('/dashboard/employee');

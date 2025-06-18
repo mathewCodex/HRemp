@@ -16,42 +16,47 @@ function Office() {
 
   useEffect(() => {
     // Fetch office locations from the backend API
-    axios.get(`${apiUrl}/employee/office_location`)
-      .then(response => {
+    axios
+      .get(`${apiUrl}/api/employee/office_location`)
+      .then((response) => {
         setOfficeLocations(response.data.officeLocations);
         setLoading(false);
       })
-      .catch(error => {
-        console.error('Error fetching office locations:', error);
+      .catch((error) => {
+        console.error("Error fetching office locations:", error);
         setLoading(false);
       });
   }, []);
 
   const handleDeleteLocation = (id) => {
     // Delete office location by ID
-    axios.delete(`${apiUrl}/employee/office_location/${id}`)
-      .then(response => {
+    axios
+      .delete(`${apiUrl}/api/employee/office_location/${id}`)
+      .then((response) => {
         // Remove the deleted location from the state
-        setOfficeLocations(officeLocations.filter(location => location.id !== id));
-        setSuccessMessage('Office location deleted successfully.');
+        setOfficeLocations(
+          officeLocations.filter((location) => location.id !== id)
+        );
+        setSuccessMessage("Office location deleted successfully.");
       })
-      .catch(error => {
-        console.error('Error deleting office location:', error);
-        setError('An error occurred while deleting office location.');
+      .catch((error) => {
+        console.error("Error deleting office location:", error);
+        setError("An error occurred while deleting office location.");
       });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios.post(`${apiUrl}/employee/office_location`, newLocation)
-      .then(response => {
+    axios
+      .post(`${apiUrl}/api/employee/office_location`, newLocation)
+      .then((response) => {
         setOfficeLocations([...officeLocations, response.data.officeLocation]);
-        setNewLocation({ name: '', latitude: '', longitude: '', address: '' });
-        setSuccessMessage('Office location added successfully.');
+        setNewLocation({ name: "", latitude: "", longitude: "", address: "" });
+        setSuccessMessage("Office location added successfully.");
       })
-      .catch(error => {
-        console.error('Error adding office location:', error);
-        setError('An error occurred while adding office location.');
+      .catch((error) => {
+        console.error("Error adding office location:", error);
+        setError("An error occurred while adding office location.");
       });
   };
 

@@ -64,17 +64,17 @@ function AdminLogin() {
 
         try {
             const response = await axios.post(
-                `${apiUrl}/auth/adminlogin`,
-                {
-                    email: values.email.trim(),
-                    password: values.password.trim()
+              `${apiUrl}/api/auth/adminlogin`,
+              {
+                email: values.email.trim(),
+                password: values.password.trim(),
+              },
+              {
+                withCredentials: true,
+                headers: {
+                  "Content-Type": "application/json",
                 },
-                {
-                    withCredentials: true,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
+              }
             );
 
             console.log('Login response:', response.data); // Debug log

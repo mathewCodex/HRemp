@@ -6,10 +6,12 @@ function Category() {
   const [category, setCategory] = useState([])
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
   useEffect(() => {
-    axios.get(`${apiUrl}/auth/category`)
-      .then(result => {
-        setCategory(result.data.categories)
-      }).catch(err => console.log(err))
+    axios
+      .get(`${apiUrl}/api/auth/category`)
+      .then((result) => {
+        setCategory(result.data.categories);
+      })
+      .catch((err) => console.log(err));
   }, [])
 
   return (

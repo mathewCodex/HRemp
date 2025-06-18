@@ -58,14 +58,18 @@ function AdminSignup() {
         setLoading(true);
 
         try {
-            const { data } = await axios.post(`${apiUrl}/auth/adminsignup`, {
+            const { data } = await axios.post(
+              `${apiUrl}/api/auth/adminsignup`,
+              {
                 name: values.name,
                 email: values.email,
                 password: values.password,
-                role: 'admin'
-            }, {
-                withCredentials: true
-            });
+                role: "admin",
+              },
+              {
+                withCredentials: true,
+              }
+            );
 
             if (data.success) {
                 toast.success("Admin account created! Redirecting to login...");

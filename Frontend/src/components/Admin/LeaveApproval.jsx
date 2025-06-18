@@ -5,45 +5,46 @@ import { format } from 'date-fns';
 import { io } from 'socket.io-client';
 
 const LeaveApproval = () => {
-  const { user } = useAuth();
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [socket, setSocket] = useState(null);
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
+    const { user } = useAuth();
+    const [pendingRequests, setPendingRequests] = useState([]);
+    const [socket, setSocket] = useState(null);
 
-  useEffect(() => {
-    // Connect to Socket.IO
-    const newSocket = io(process.env.REACT_APP_API_URL, {
-      withCredentials: true
-    });
-    setSocket(newSocket);
-
-    // Join admin room
-    newSocket.emit('join', 'admin_room');
-
-    // Listen for new leave requests
-    newSocket.on('new_leave_request', () => {
-      fetchPendingRequests();
-    });
-
-    // Clean up on unmount
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    fetchPendingRequests();
-  }, []);
-
-  const fetchPendingRequests = async () => {
-    try {
-      const response = await axios.get('/api/leave/pending', {
-        withCredentials: true
+    useEffect(() => {
+      // Connect to Socket.IO
+      const newSocket = io(process.env.REACT_APP_API_URL, {
+        withCredentials: true,
       });
-      setPendingRequests(response.data.data);
-    } catch (error) {
-      console.error('Error fetching pending leave requests:', error);
-    }
-  };
+      setSocket(newSocket);
+
+      // Join admin room
+      newSocket.emit("join", "admin_room");
+
+      // Listen for new leave requests
+      newSocket.on("new_leave_request", () => {
+        fetchPendingRequests();
+      });
+
+      // Clean up on unmount
+      return () => {
+        newSocket.disconnect();
+      };
+    }, []);
+
+    useEffect(() => {
+      fetchPendingRequests();
+    }, []);
+
+    const fetchPendingRequests = async () => {
+      try {
+        const response = await axios.get(`${apiUrl}/api/leave/pending`, {
+          withCredentials: true,
+        });
+        setPendingRequests(response.data.data);
+      } catch (error) {
+        console.error("Error fetching pending leave requests:", error);
+      }
+    };
 
   const handleApprove = async (requestId) => {
     try {

@@ -9,7 +9,7 @@ const Employee = () => {
 
   useEffect(() => {
     axios
-      .get(`${apiUrl}/auth/employee`)
+      .get(`${apiUrl}/api/employee`)
       .then((response) => {
         if (response.data.success) {
           setEmployees(response.data.Result);
@@ -22,15 +22,15 @@ const Employee = () => {
 
   const handleDelete = (id) => {
     axios
-      .delete(`${apiUrl}/auth/delete_employee/${id}`)
+      .delete(`${apiUrl}/api/employee/delete_employee/${id}`)
       .then((response) => {
         if (response.data.success) {
           // Refresh the employee list
           axios
-            .get(`${apiUrl}/auth/employee`)
+            .get(`${apiUrl}/api/employee`)
             .then((response) => {
               if (response.data.success) {
-                setEmployees(response.data.Result); 
+                setEmployees(response.data.Result);
               } else {
                 alert(response.data.message);
               }

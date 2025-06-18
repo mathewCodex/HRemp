@@ -16,15 +16,18 @@ function EmployeeCalendar({ employeeId }) {
   
   const fetchData = () => {
     const formattedDate = selectedDate.toISOString().slice(0, 10); // Format date as 'YYYY-MM-DD'
-    axios.get(`${apiUrl}/employee/calendar/${employeeId}?date=${formattedDate}`)
-      .then(result => {
+    axios
+      .get(
+        `${apiUrl}/api/employee/calendar/${employeeId}?date=${formattedDate}`
+      )
+      .then((result) => {
         if (result.data.success && Array.isArray(result.data.calendarData)) {
           setCalendarData(result.data.calendarData);
         } else {
           console.error("Invalid response format:", result.data);
         }
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
   };
 
   // Function to format timestamp strings

@@ -13,7 +13,7 @@ const ManageAdmin = () => {
 
   const fetchAdmins = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/auth/admin_records`);
+      const response = await axios.get(`${apiUrl}/api/admin/admin_records`);
       setAdmins(response.data.Result);
     } catch (error) {
       console.error("Error fetching admins:", error);
@@ -33,7 +33,7 @@ const ManageAdmin = () => {
     }
 
     try {
-      const response = await axios.post(`${apiUrl}/auth/add_admin`, {
+      const response = await axios.post(`${apiUrl}/api/admin/add_admin`, {
         email,
         password,
       });
@@ -46,10 +46,11 @@ const ManageAdmin = () => {
     }
   };
 
-
   const handleDeleteAdmin = async (id) => {
     try {
-      const response = await axios.delete(`${apiUrl}/auth/delete_admin/${id}`);
+      const response = await axios.delete(
+        `${apiUrl}/api/admin/delete_admin/${id}`
+      );
       console.log(response.data);
       fetchAdmins(); // Refresh the admin list after deletion
     } catch (error) {

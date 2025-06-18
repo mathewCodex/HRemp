@@ -25,7 +25,7 @@ const Home = () => {
 
   const fetchOngoingProjects = () => {
     axios
-      .get(`${apiUrl}/projects/ongoing`)
+      .get(`${apiUrl}/api/projects/ongoing`)
       .then((result) => {
         if (result.data.success) {
           setOngoingProjects(result.data.projects);
@@ -38,7 +38,7 @@ const Home = () => {
 
   const fetchOngoingTasks = () => {
     axios
-      .get(`${apiUrl}/tasks/ongoing`)
+      .get(`${apiUrl}/api/tasks/ongoing`)
       .then((result) => {
         if (result.data.success) {
           setOngoingTasks(result.data.tasks);
