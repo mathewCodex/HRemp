@@ -7,7 +7,7 @@ function AddCategory() {
     const [error, setError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const navigate = useNavigate();
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
     const handleInputChange = (e) => {
         setCategory(e.target.value);

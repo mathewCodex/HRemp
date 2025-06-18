@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 function AdminLogin() {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiUrl = import.meta.env.VITE_API_BASE_URL;
     
     const [values, setValues] = useState({
         email: '',
@@ -24,7 +24,8 @@ function AdminLogin() {
     useEffect(() => {
         const authData = JSON.parse(localStorage.getItem('auth'));
         if (authData?.isAuthenticated) {
-            navigate('/dashboard');
+            
+            navigate("/AdminDashboard", { replace: true });
         }
     }, [navigate]);
 

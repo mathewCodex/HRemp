@@ -41,7 +41,7 @@ const EmployeeProfile = () => {
   const [loading, setLoading] = useState(true); // optional loading state
   const [error, setError] = useState(null); // optional error state
   const user = JSON.parse(localStorage.getItem("auth"));
-  console.log(user);
+  console.log(user.user._id);
   const userId = user.user._id;
   useEffect(() => {
     const fetchEmployeedata = async () => {
@@ -50,8 +50,8 @@ const EmployeeProfile = () => {
           `${apiUrl}/api/employee/detail/${userId}`
         ); // Update this to your actual endpoint
         console.log(response);
-        setEmployees(response.data.employees || []);
-        console.log(response.data.employees);
+        setEmployees(response.data.Result || []);
+        console.log(response.data.Result);
       } catch (err) {
         setError("Failed to fetch employees");
         console.error(err);

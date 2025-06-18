@@ -4,7 +4,7 @@ import axios from 'axios';
 function Office() {
   const [officeLocations, setOfficeLocations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
   const [newLocation, setNewLocation] = useState({
     name: '',
     latitude: '',

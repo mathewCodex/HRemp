@@ -4,7 +4,7 @@ import axios from 'axios'
 
 function Category() {
   const [category, setCategory] = useState([])
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
   useEffect(() => {
     axios.get(`${apiUrl}/auth/category`)
       .then(result => {

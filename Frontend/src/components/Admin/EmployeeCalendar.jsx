@@ -7,7 +7,7 @@ import './EmployeeCalendar.css';
 function EmployeeCalendar({ employeeId }) {
   const [calendarData, setCalendarData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date()); // Initialize selectedDate with current date
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     fetchData();

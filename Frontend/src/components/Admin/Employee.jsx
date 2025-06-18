@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 const Employee = () => {
   const [employees, setEmployees] = useState([]);
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     axios

@@ -20,7 +20,7 @@ function AddEmployee() {
   const [successMessage, setSuccessMessage] = useState("");
   const [formKey, setFormKey] = useState(Date.now());
   const navigate = useNavigate();
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
   const [categories, setCategories] = useState([]);
 
